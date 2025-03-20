@@ -8,5 +8,4 @@ public class INGAssessment {
     public static void main(String[] args) {
         SpringApplication.run(INGAssessment.class, args);
     }
-    // starting point
 }

@@ -1,5 +1,6 @@
 package ing.assessment.db.order;
 
+import ing.assessment.model.Location;
 import jakarta.persistence.Embeddable;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -13,4 +14,5 @@ public class OrderProduct {
 
     private Integer productId;
     private Integer quantity;
+    private Location location;
 }
