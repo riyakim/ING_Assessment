@@ -1,6 +1,7 @@
 package ing.assessment.controller;
 
 import ing.assessment.db.product.Product;
+import ing.assessment.exception.ProductNotFound;
 import ing.assessment.service.ProductService;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,6 +24,12 @@ public class ProductController {
 
     @GetMapping("/{id}")
     public List<Product> getProduct(@PathVariable("id") Integer id) {
-        return productService.getProductsById(id);
+        List<Product> products = productService.getProductsById(id);
+        if(products == null || products.isEmpty()) {
+            throw new ProductNotFound("No product found with id: " + id);
+        }
+        return products;
     }
+
+    // TODO update stock
 }

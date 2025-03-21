@@ -4,6 +4,9 @@ import ing.assessment.db.order.Order;
 import ing.assessment.db.order.OrderProduct;
 import ing.assessment.db.product.Product;
 import ing.assessment.db.repository.OrderRepository;
+import ing.assessment.exception.InvalidOrder;
+import ing.assessment.exception.OutOfStock;
+import ing.assessment.exception.ProductNotFound;
 import ing.assessment.model.Location;
 import ing.assessment.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,9 +35,14 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public void placeOrder(List<OrderProduct> orderProducts) {
+        if(orderProducts == null || orderProducts.isEmpty()) {
+            throw new InvalidOrder("Invalid Order - no products specified");
+        }
+
         Order order = new Order();
         order.setTimestamp(new Date());
         order.setOrderProducts(orderProducts);
+
         double costOfOrder = calculateCostOrder(orderProducts);
         order.setOrderCost(costOfOrder);
         if(costOfOrder > 1000) {
@@ -51,12 +59,24 @@ public class OrderServiceImpl implements OrderService {
         double cost = 0;
         for(OrderProduct orderProduct : orderProducts) {
             List<Product> productList = productServiceImpl.getProductsById(orderProduct.getProductId());
-            for(Product product : productList) {
-                if(product.getProductCk().getLocation().equals(orderProduct.getLocation())) {
-                    cost += product.getPrice() * orderProduct.getQuantity();
+            if(productList == null || productList.isEmpty()) {
+                throw new ProductNotFound("Product not found with id: " + orderProduct.getProductId());
+            }
+            boolean found = false;
+            for (Product product : productList) {
+                if (product.getProductCk().getLocation().equals(orderProduct.getLocation())) {
+                    if(checkStock(orderProduct, product)) {
+                        cost += product.getPrice() * orderProduct.getQuantity();
+                    }
+                    found = true;
                 }
             }
+            if(!found) {
+                throw new ProductNotFound("Product with id: " + orderProduct.getProductId() +
+                        " not found in location " + orderProduct.getLocation());
+            }
         }
+        // TODO: update stock
         return cost;
     }
 
@@ -70,5 +90,14 @@ public class OrderServiceImpl implements OrderService {
             }
         }
         return deliveryTime;
+    }
+
+    boolean checkStock(OrderProduct orderProduct, Product product) {
+        if(orderProduct.getQuantity() > product.getQuantity()) {
+            throw new OutOfStock("Product with id: " + orderProduct.getProductId() + " from: " +
+                    orderProduct.getLocation() + " is low on stock. Only " + product.getQuantity() +
+                    " items left.");
+        }
+        return true;
     }
 }
