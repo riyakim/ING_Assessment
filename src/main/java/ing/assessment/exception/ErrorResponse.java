@@ -1,16 +1,11 @@
 package ing.assessment.exception;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Builder;
+import lombok.Data;
 
-@Getter
-@Setter
+@Data
+@Builder
 public class ErrorResponse {
-    private int status;
     private String message;
 
-    public ErrorResponse(int status, String message) {
-        this.status = status;
-        this.message = message;
-    }
 }

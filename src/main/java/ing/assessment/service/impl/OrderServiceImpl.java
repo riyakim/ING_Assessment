@@ -34,7 +34,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public void placeOrder(List<OrderProduct> orderProducts) {
+    public Order placeOrder(List<OrderProduct> orderProducts) {
         if(orderProducts == null || orderProducts.isEmpty()) {
             throw new InvalidOrder("Invalid Order - no products specified");
         }
@@ -52,7 +52,7 @@ public class OrderServiceImpl implements OrderService {
             order.setDeliveryCost(0);
         }
         order.setDeliveryTime(calculateDeliveryTime(orderProducts));
-        orderRepository.save(order);
+        return orderRepository.save(order);
     }
 
     double calculateCostOrder(List<OrderProduct> orderProducts) {
@@ -67,6 +67,8 @@ public class OrderServiceImpl implements OrderService {
                 if (product.getProductCk().getLocation().equals(orderProduct.getLocation())) {
                     if(checkStock(orderProduct, product)) {
                         cost += product.getPrice() * orderProduct.getQuantity();
+                        productServiceImpl.updateStock(product.getProductCk(),
+                                product.getQuantity() - orderProduct.getQuantity());
                     }
                     found = true;
                 }
@@ -76,7 +78,7 @@ public class OrderServiceImpl implements OrderService {
                         " not found in location " + orderProduct.getLocation());
             }
         }
-        // TODO: update stock
+
         return cost;
     }
 
@@ -93,7 +95,10 @@ public class OrderServiceImpl implements OrderService {
     }
 
     boolean checkStock(OrderProduct orderProduct, Product product) {
-        if(orderProduct.getQuantity() > product.getQuantity()) {
+        if(product.getQuantity() == 0) {
+            throw new OutOfStock("Product with id: " + orderProduct.getProductId() + " from: " +
+                    orderProduct.getLocation() + " is out of stock.");
+        } else if(orderProduct.getQuantity() > product.getQuantity()) {
             throw new OutOfStock("Product with id: " + orderProduct.getProductId() + " from: " +
                     orderProduct.getLocation() + " is low on stock. Only " + product.getQuantity() +
                     " items left.");
