@@ -9,6 +9,7 @@ import ing.assessment.exception.OutOfStock;
 import ing.assessment.exception.ProductNotFound;
 import ing.assessment.model.Location;
 import ing.assessment.service.OrderService;
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -17,16 +18,12 @@ import java.util.HashSet;
 import java.util.List;
 
 @Service
+@AllArgsConstructor
 public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
     @Autowired
     private final ProductServiceImpl productServiceImpl;
-
-    public OrderServiceImpl(OrderRepository orderRepository, ProductServiceImpl productServiceImpl) {
-        this.orderRepository = orderRepository;
-        this.productServiceImpl = productServiceImpl;
-    }
 
     @Override
     public List<Order> getAllOrders() {
@@ -39,9 +36,10 @@ public class OrderServiceImpl implements OrderService {
             throw new InvalidOrder("Invalid Order - no products specified");
         }
 
-        Order order = new Order();
-        order.setTimestamp(new Date());
-        order.setOrderProducts(orderProducts);
+        Order order = Order.builder()
+                .timestamp(new Date())
+                .orderProducts(orderProducts)
+                .build();
 
         double costOfOrder = calculateCostOrder(orderProducts);
         order.setOrderCost(costOfOrder);
@@ -59,9 +57,6 @@ public class OrderServiceImpl implements OrderService {
         double cost = 0;
         for(OrderProduct orderProduct : orderProducts) {
             List<Product> productList = productServiceImpl.getProductsById(orderProduct.getProductId());
-            if(productList == null || productList.isEmpty()) {
-                throw new ProductNotFound("Product not found with id: " + orderProduct.getProductId());
-            }
             boolean found = false;
             for (Product product : productList) {
                 if (product.getProductCk().getLocation().equals(orderProduct.getLocation())) {
